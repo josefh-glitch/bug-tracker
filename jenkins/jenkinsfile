@@ -11,7 +11,10 @@ pipeline {
             }
             steps {
                 dir('bugtracker-backend') {
-                    sh 'go test -v ./...'
+                        sh '''
+                export GOCACHE=/tmp/go-build
+                go test -v ./...
+            '''
                 }
 
 
