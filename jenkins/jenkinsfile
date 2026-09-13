@@ -7,6 +7,7 @@ pipeline {
                 docker {
                     image 'snakee/golang-junit:1.21'
                     reuseNode true
+                    alwaysPull false  // Verhindert den automatischen Download, wenn lokal vorhanden
                 }
             }
             steps {
@@ -26,6 +27,7 @@ pipeline {
                 docker{
                     image 'node:20-alpine'
                     reuseNode true
+                    alwaysPull false  // Verhindert den automatischen Download, wenn lokal vorhanden
                 }
             }
             steps {
