@@ -2,82 +2,86 @@ pipeline {
     agent any
 
     stages {
-        stage('Unit Tests - Backend') {
-            agent {
-                docker {
-                    image 'snakee/golang-junit:1.21'
-                    reuseNode true
-                    alwaysPull false  // Verhindert den automatischen Download, wenn lokal vorhanden
-                }
-            }
-            steps {
-                dir('bugtracker-backend') {
-                        sh '''
-                export GOCACHE=/tmp/go-build
-                export GOMODCACHE=/tmp/go-mod
-                go test -v ./... 2>&1 | go-junit-report > test-results.xml
-                
-               
-
-                
-                
-                #Generate coverage report
-                go test -coverprofile=coverage.out -covermode=atomic ./...
-                go tool cover -html=coverage.out -o coverage.html
-
-                mkdir -p reports
-                mv coverage.html reports/
-
-
-                '''
-                }
-                
-            }
-            post {
-                always {
-                    junit 'bugtracker-backend/test-results.xml'
-                }
-            }
-        }
-        stage('Unit Tests - Frontend'){
-            agent {
-                docker{
-                    image 'node:20-alpine'
-                    reuseNode true
-                    alwaysPull false  // Verhindert den automatischen Download, wenn lokal vorhanden
-                }
-            }
-            steps {
-                dir('bugtracker-frontend'){
-                    sh '''
-                    npm ci
-                    npm test
-                    mkdir -p reports
-                    mv coverage reports/
-                    '''
-                }
-            }
-            post {
-                always {
-                    junit 'bugtracker-frontend/test-results.xml'
-                    sh 'ls -la bugtracker-backend/reports'
-                    sh 'ls -la bugtracker-frontend/reports'
-                    sh 'ls -la bugtracker-frontend/reports/coverage'
+        stage('Execute Unit Tests'){
+            parallel {
+                stage('Unit Tests - Backend') {
+                    agent {
+                        docker {
+                            image 'snakee/golang-junit:1.21'
+                            reuseNode true
+                            alwaysPull false  // Verhindert den automatischen Download, wenn lokal vorhanden
+                        }
+                    }
+                    steps {
+                        dir('bugtracker-backend') {
+                                sh '''
+                        export GOCACHE=/tmp/go-build
+                        export GOMODCACHE=/tmp/go-mod
+                        go test -v ./... 2>&1 | go-junit-report > test-results.xml
+                        
                     
-                    publishHTML( target:[
-                        reportDir: 'bugtracker-backend/reports',
-                        reportFiles: 'coverage.html',
-                        reportName: 'Backend Coverage Report'
-                    ])
 
-                          publishHTML( target:[
-                        reportDir: 'bugtracker-frontend/reports/coverage',
-                        reportFiles: 'index.html',
-                        reportName: 'Frontend Coverage Report'
-                    ])
-              
+                        
+                        
+                        #Generate coverage report
+                        go test -coverprofile=coverage.out -covermode=atomic ./...
+                        go tool cover -html=coverage.out -o coverage.html
+
+                        mkdir -p reports
+                        mv coverage.html reports/
+
+
+                        '''
+                        }
+                        
+                    }
+                    post {
+                        always {
+                            junit 'bugtracker-backend/test-results.xml'
+                        }
+                    }
                 }
-            }
-        }
-    }
+                stage('Unit Tests - Frontend'){
+                    agent {
+                    docker{
+                        image 'node:20-alpine'
+                        reuseNode true
+                        alwaysPull false  // Verhindert den automatischen Download, wenn lokal vorhanden
+                    }
+                    }
+                    steps {
+                    dir('bugtracker-frontend'){
+                        sh '''
+                        npm ci
+                        npm test
+                        mkdir -p reports
+                        mv coverage reports/
+                        '''
+                    }
+                    }
+                    post {
+                    always {
+                        junit 'bugtracker-frontend/test-results.xml'
+                        sh 'ls -la bugtracker-backend/reports'
+                        sh 'ls -la bugtracker-frontend/reports'
+                        sh 'ls -la bugtracker-frontend/reports/coverage'
+                        
+                        publishHTML( target:[
+                            reportDir: 'bugtracker-backend/reports',
+                            reportFiles: 'coverage.html',
+                            reportName: 'Backend Coverage Report'
+                        ])
+
+                            publishHTML( target:[
+                            reportDir: 'bugtracker-frontend/reports/coverage',
+                            reportFiles: 'index.html',
+                            reportName: 'Frontend Coverage Report'
+                        ])
+                
+                    }
+                    }
+                }
+            }      
+        }   
+    }    
 }
