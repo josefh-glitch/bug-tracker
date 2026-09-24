@@ -56,7 +56,6 @@ pipeline {
                         reportDir: 'bugtracker-backend/reports',
                         reportFiles: 'coverage.html'
                         reportName: 'Backend Coverage Report'
-
                     ]
                 }
             }
